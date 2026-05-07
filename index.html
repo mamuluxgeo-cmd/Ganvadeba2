@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KONCEPT | განვადების სისტემა</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <div id="app">
+
+    <section id="loginView" class="login-page">
+      <div class="login-card">
+        <div class="brand-block">
+          <img src="https://cdn.shopify.com/s/files/1/0917/8542/9283/files/favicon.png?v=1733510971" alt="KONCEPT" />
+          <div>
+            <h1>KONCEPT</h1>
+            <p>შიდა განვადების სისტემა</p>
+          </div>
+        </div>
+
+        <form id="loginForm" class="form-grid single">
+          <label>
+            მომხმარებელი
+            <input id="loginUsername" type="text" placeholder="admin ან cashier" autocomplete="username" />
+          </label>
+
+          <label>
+            პაროლი
+            <input id="loginPassword" type="password" placeholder="პაროლი" autocomplete="current-password" />
+          </label>
+
+          <button id="loginBtn" type="submit" class="btn primary full">შესვლა</button>
+          <div id="loginMessage" class="message"></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="mainView" class="hidden">
+      <aside class="sidebar">
+        <div class="side-logo">
+          <img src="https://cdn.shopify.com/s/files/1/0917/8542/9283/files/favicon.png?v=1733510971" alt="KONCEPT" />
+          <div>
+            <h2>KONCEPT</h2>
+            <span id="userRoleText">Panel</span>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-btn active" data-view="dashboardView">დეშბორდი</button>
+          <button class="nav-btn" data-view="newContractView">ახალი ხელშეკრულება</button>
+          <button class="nav-btn admin-only" data-view="oldInstallmentView">ძველი განვადება</button>
+          <button class="nav-btn admin-only" data-view="controlView">გადახდების კონტროლი</button>
+          <button class="nav-btn" data-view="contractsView">ხელშეკრულებები</button>
+        </nav>
+
+        <button id="logoutBtn" class="btn ghost full">გასვლა</button>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <h1 id="pageTitle">დეშბორდი</h1>
+            <p id="pageSubtitle">Google Sheets ბაზაზე დაკავშირებული ვებ-პანელი</p>
+          </div>
+          <button id="refreshBtn" class="btn soft">განახლება</button>
+        </header>
+
+        <section id="dashboardView" class="page-view">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span>სულ ხელშეკრულება</span>
+              <strong id="statContracts">0</strong>
+            </div>
+            <div class="stat-card">
+              <span>სულ დარჩენილი</span>
+              <strong id="statRemaining">0 ₾</strong>
+            </div>
+            <div class="stat-card">
+              <span>დაგვიანებული</span>
+              <strong id="statOverdue">0 ₾</strong>
+            </div>
+            <div class="stat-card">
+              <span>დღეს გადასახდელი</span>
+              <strong id="statDueToday">0</strong>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>უახლოესი გადახდები</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>კლიენტი</th>
+                    <th>ტელეფონი</th>
+                    <th>შემდეგი თარიღი</th>
+                    <th>გადასახდელი</th>
+                    <th>სტატუსი</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="newContractView" class="page-view hidden">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>ახალი ხელშეკრულების შექმნა</h2>
+              <div class="actions">
+                <button id="previewContractBtn" class="btn soft">წინასწარი ნახვა</button>
+                <button id="saveNewContractBtn" class="btn primary">შენახვა ბაზაში</button>
+              </div>
+            </div>
+
+            <form id="newContractForm" class="form-grid">
+              <label>ხელშეკრულების N
+                <input name="contractNumber" required placeholder="მაგ: 5200" />
+              </label>
+              <label>სახელი გვარი
+                <input name="buyerName" required placeholder="მაგ: მაია შოთაძე" />
+              </label>
+              <label>პირადი ნომერი
+                <input name="buyerId" required placeholder="03001015228" />
+              </label>
+              <label>ტელეფონი
+                <input name="phone" required placeholder="595982200" />
+              </label>
+              <label>მისამართი
+                <input name="address" required placeholder="ქ. ბათუმი..." />
+              </label>
+              <label class="wide">პროდუქცია
+                <input name="products" required placeholder="დივანი, სავარძელი, მაგიდა..." />
+              </label>
+              <label>სრული თანხა
+                <input name="totalAmount" type="number" step="0.01" required placeholder="5200" />
+              </label>
+              <label>წინასწარი შენატანი
+                <input name="advanceAmount" type="number" step="0.01" value="0" />
+              </label>
+              <label>თვეების რაოდენობა
+                <input name="months" type="number" min="1" required placeholder="6" />
+              </label>
+              <label>ხელშეკრულების თარიღი
+                <input name="contractDate" type="date" required />
+              </label>
+              <label>პირველი გადახდის თარიღი
+                <input name="firstPaymentDate" type="date" required />
+              </label>
+              <label>გადახდის დღე
+                <input name="paymentDay" type="number" min="1" max="31" placeholder="15" />
+              </label>
+              <label class="wide">კომენტარი
+                <input name="comment" placeholder="შიდა კომენტარი" />
+              </label>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>ხელშეკრულების წინასწარი ხედი</h2>
+              <div class="actions">
+                <button id="downloadPdfBtn" class="btn primary">PDF ჩამოტვირთვა</button>
+                <button id="printContractBtn" class="btn soft">ბეჭდვა</button>
+              </div>
+            </div>
+            <div class="paper-wrap">
+              <div id="contractPreview" class="a4-paper empty-preview">
+                შეავსე ფორმა და დააჭირე „წინასწარი ნახვა“
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="oldInstallmentView" class="page-view hidden">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>ძველი განვადების დამატება კონტროლში</h2>
+              <button id="saveOldInstallmentBtn" class="btn primary">ძველი განვადების შენახვა</button>
+            </div>
+
+            <form id="oldInstallmentForm" class="form-grid">
+              <label>სახელი გვარი
+                <input name="buyerName" required />
+              </label>
+              <label>პირადი ნომერი
+                <input name="buyerId" />
+              </label>
+              <label>ტელეფონი
+                <input name="phone" />
+              </label>
+              <label>მისამართი
+                <input name="address" />
+              </label>
+              <label class="wide">პროდუქცია
+                <input name="products" />
+              </label>
+              <label>სრული თანხა
+                <input name="totalAmount" type="number" step="0.01" required />
+              </label>
+              <label>უკვე გადახდილი
+                <input name="alreadyPaid" type="number" step="0.01" value="0" />
+              </label>
+              <label>დარჩენილი თანხა
+                <input name="remainingAmount" type="number" step="0.01" required />
+              </label>
+              <label>დარჩენილი თვეები
+                <input name="months" type="number" min="1" required />
+              </label>
+              <label>შემდეგი გადახდის თარიღი
+                <input name="firstPaymentDate" type="date" required />
+              </label>
+              <label>გადახდის დღე
+                <input name="paymentDay" type="number" min="1" max="31" />
+              </label>
+              <label>ძველი ხელშეკრულების N
+                <input name="oldContractNumber" />
+              </label>
+              <label class="wide">კომენტარი
+                <input name="comment" />
+              </label>
+            </form>
+          </div>
+        </section>
+
+        <section id="controlView" class="page-view hidden">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>გადახდების კონტროლი</h2>
+              <div class="actions">
+                <input id="controlSearch" class="search" placeholder="ძებნა კლიენტით, ტელეფონით, პირადობით..." />
+                <button id="reloadControlBtn" class="btn soft">განახლება</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>კლიენტი</th>
+                    <th>ტელეფონი</th>
+                    <th>პროდუქცია</th>
+                    <th>სულ თანხა</th>
+                    <th>გადახდილი</th>
+                    <th>დარჩენილი</th>
+                    <th>შემდეგი თარიღი</th>
+                    <th>შემდეგი გადასახდელი</th>
+                    <th>დაგვიანებული</th>
+                    <th>სტატუსი</th>
+                    <th>მოქმედება</th>
+                  </tr>
+                </thead>
+                <tbody id="controlRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="contractsView" class="page-view hidden">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>ხელშეკრულებების ბაზა</h2>
+              <div class="actions">
+                <input id="contractsSearch" class="search" placeholder="ძებნა..." />
+                <button id="reloadContractsBtn" class="btn soft">განახლება</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>ტიპი</th>
+                    <th>კლიენტი</th>
+                    <th>პ/ნ</th>
+                    <th>ტელეფონი</th>
+                    <th>პროდუქცია</th>
+                    <th>თანხა</th>
+                    <th>სტატუსი</th>
+                    <th>შემქმნელი</th>
+                    <th>მოქმედება</th>
+                  </tr>
+                </thead>
+                <tbody id="contractsRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <div id="paymentModal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>გადახდის დამატება</h2>
+          <button class="icon-btn" data-close-modal>×</button>
+        </div>
+
+        <form id="paymentForm" class="form-grid single">
+          <input type="hidden" name="contractId" />
+          <label>კლიენტი
+            <input name="buyerName" readonly />
+          </label>
+          <label>გადახდის თარიღი
+            <input name="paymentDate" type="date" required />
+          </label>
+          <label>თანხა
+            <input name="amount" type="number" step="0.01" required />
+          </label>
+          <label>მეთოდი
+            <select name="method">
+              <option value="ნაღდი">ნაღდი</option>
+              <option value="ბარათი">ბარათი</option>
+              <option value="გადარიცხვა">გადარიცხვა</option>
+              <option value="სხვა">სხვა</option>
+            </select>
+          </label>
+          <label>კომენტარი
+            <input name="comment" placeholder="მაგ: ნაწილობრივი გადახდა" />
+          </label>
+          <button id="confirmPaymentBtn" type="button" class="btn primary full">გადახდის შენახვა</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="detailsModal" class="modal hidden">
+      <div class="modal-card wide-modal">
+        <div class="modal-head">
+          <h2>ხელშეკრულების დეტალები</h2>
+          <button class="icon-btn" data-close-modal>×</button>
+        </div>
+        <div id="detailsContent"></div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
