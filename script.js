@@ -32,7 +32,7 @@ function bindEvents() {
   document.getElementById("saveOldInstallmentBtn").addEventListener("click", saveOldInstallment);
 
   document.getElementById("downloadPdfBtn").addEventListener("click", downloadContractPdf);
-  document.getElementById("printContractBtn").addEventListener("click", () => window.print());
+  document.getElementById("printContractBtn").addEventListener("click", printContract);
 
   document.getElementById("reloadControlBtn").addEventListener("click", loadControl);
   document.getElementById("reloadContractsBtn").addEventListener("click", loadContracts);
@@ -546,28 +546,89 @@ function closeModals() {
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
 }
 
-/* ========== PDF ========== */
-function downloadContractPdf() {
-  const element = document.getElementById("contractPreview");
+/* ========== ბეჭდვა (Ctrl+P / Print ღილაკი) ========== */
+function printContract() {
+  const preview = document.getElementById("contractPreview");
+  if (!lastPreviewHtml || preview.classList.contains("empty-preview")) {
+    toast("ჯერ შექმენი წინასწარი ხედი", true);
+    return;
+  }
+  // მცირე დაყოვნება — დარწმუნდება რომ DOM სრულად განახლდა
+  setTimeout(() => window.print(), 100);
+}
 
-  if (!lastPreviewHtml || element.classList.contains("empty-preview")) {
+/* ========== PDF — თითოეული .contract-page ცალკე A4-ად ========== */
+async function downloadContractPdf() {
+  const preview = document.getElementById("contractPreview");
+
+  if (!lastPreviewHtml || preview.classList.contains("empty-preview")) {
     toast("ჯერ შექმენი წინასწარი ხედი", true);
     return;
   }
 
-  const fileName = `khelshekruleba-${(lastPreviewData?.contractNumber || "ganvadeba")}.pdf`;
+  const pages = preview.querySelectorAll(".contract-page");
+  if (!pages.length) {
+    toast("გვერდები ვერ მოიძებნა", true);
+    return;
+  }
 
-  const opt = {
-    // ზედა, მარცხენა, ქვედა, მარჯვენა — ყოველ გვერდზე ვრცელდება
-    margin: [12, 12, 12, 12],
-    filename: fileName,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["css", "legacy"], before: ".page-break" }
-  };
+  // jsPDF და html2canvas html2pdf.bundle-დან
+  const JsPdfClass = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  const h2c = window.html2canvas;
 
-  html2pdf().set(opt).from(element).save();
+  if (!JsPdfClass || !h2c) {
+    toast("PDF ბიბლიოთეკა არ ჩაიტვირთა", true);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const pdf = new JsPdfClass({ orientation: "p", unit: "mm", format: "a4" });
+    const A4_W = 210;
+    const A4_H = 297;
+
+    for (let i = 0; i < pages.length; i++) {
+      if (i > 0) pdf.addPage();
+
+      // box-shadow ვიზუალურად გადავარიდოთ canvas-ში
+      const originalShadow = pages[i].style.boxShadow;
+      pages[i].style.boxShadow = "none";
+
+      const canvas = await h2c(pages[i], {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false
+      });
+
+      pages[i].style.boxShadow = originalShadow;
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const ratio = canvas.height / canvas.width;
+
+      let imgW = A4_W;
+      let imgH = A4_W * ratio;
+
+      // თუ შინაარსი მაღალია, ცენტრში მოვათავსოთ
+      if (imgH > A4_H) {
+        imgH = A4_H;
+        imgW = A4_H / ratio;
+      }
+
+      const x = (A4_W - imgW) / 2;
+      const y = 0;
+
+      pdf.addImage(imgData, "JPEG", x, y, imgW, imgH);
+    }
+
+    const fileName = `khelshekruleba-${(lastPreviewData?.contractNumber || "ganvadeba")}.pdf`;
+    pdf.save(fileName);
+  } catch (err) {
+    toast("PDF შექმნის შეცდომა: " + err.message, true);
+  } finally {
+    setLoading(false);
+  }
 }
 
 /* ========== HTML BUILDER ========== */
