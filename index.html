@@ -69,23 +69,65 @@
         </header>
 
         <section id="dashboardView" class="page-view">
-          <div class="stats-grid">
+          <div class="stats-grid stats-6">
             <div class="stat-card">
               <span>სულ ხელშეკრულება</span>
               <strong id="statContracts">0</strong>
+            </div>
+            <div class="stat-card stat-blue">
+              <span>სულ განვადების მოცულობა</span>
+              <strong id="statVolume">0 ₾</strong>
+            </div>
+            <div class="stat-card stat-green">
+              <span>სულ გადახდილი</span>
+              <strong id="statPaid">0 ₾</strong>
             </div>
             <div class="stat-card">
               <span>სულ დარჩენილი</span>
               <strong id="statRemaining">0 ₾</strong>
             </div>
-            <div class="stat-card">
+            <div class="stat-card stat-red">
               <span>დაგვიანებული</span>
               <strong id="statOverdue">0 ₾</strong>
             </div>
-            <div class="stat-card">
+            <div class="stat-card stat-yellow">
               <span>დღეს გადასახდელი</span>
               <strong id="statDueToday">0</strong>
             </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>თვიური სტატისტიკა</h2>
+              <div class="actions">
+                <input type="month" id="monthFilter" class="search" style="min-width:180px" />
+                <button id="reloadMonthlyBtn" class="btn soft">განახლება</button>
+              </div>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-card stat-blue">
+                <span>გადასახდელი (გრაფიკით)</span>
+                <strong id="monthScheduled">0 ₾</strong>
+                <small id="monthScheduledCount" class="muted-small">0 გადახდა</small>
+              </div>
+              <div class="stat-card stat-green">
+                <span>ფაქტობრივად გადახდილი</span>
+                <strong id="monthPaid">0 ₾</strong>
+                <small id="monthPaidCount" class="muted-small">0 გადახდა</small>
+              </div>
+              <div class="stat-card stat-yellow">
+                <span>სხვაობა (ჯერ გადასახდელი)</span>
+                <strong id="monthDiff">0 ₾</strong>
+                <small id="monthCollectionRate" class="muted-small">0%</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>სტატუსების განაწილება</h2>
+            </div>
+            <div id="statusBreakdown" class="status-breakdown"></div>
           </div>
 
           <div class="panel">

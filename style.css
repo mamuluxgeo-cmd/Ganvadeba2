@@ -155,9 +155,67 @@ button, input, select { font-family: inherit; }
 /* ========== STATS / PANELS ========== */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
   margin-bottom: 20px;
+}
+
+.stats-grid.stats-6 {
+  grid-template-columns: repeat(6, minmax(160px, 1fr));
+}
+
+.stat-card.stat-blue   { border-left: 4px solid #2563eb; }
+.stat-card.stat-green  { border-left: 4px solid #16a34a; }
+.stat-card.stat-red    { border-left: 4px solid #dc2626; }
+.stat-card.stat-yellow { border-left: 4px solid #ca8a04; }
+
+.stat-card .muted-small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* სტატუსების განაწილების ბარები */
+.status-breakdown {
+  display: grid;
+  gap: 12px;
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 80px;
+  gap: 12px;
+  align-items: center;
+}
+
+.status-row .status-label {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.status-row .status-bar-wrap {
+  height: 24px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.status-row .status-bar {
+  height: 100%;
+  border-radius: 8px;
+  transition: width .3s;
+}
+
+.status-row .status-bar.b-active   { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+.status-row .status-bar.b-closed   { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.status-row .status-bar.b-overdue  { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.status-row .status-bar.b-duetoday { background: linear-gradient(90deg, #fbbf24, #ca8a04); }
+
+.status-row .status-count {
+  text-align: right;
+  font-weight: 800;
+  font-size: 14px;
 }
 
 .stat-card, .panel {
@@ -602,6 +660,8 @@ tr:hover td { background: #f8fafc; }
   .sidebar { width: 100%; height: auto; position: relative; }
   .nav { grid-template-columns: repeat(2, 1fr); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid.stats-6 { grid-template-columns: repeat(2, 1fr); }
+  .status-row { grid-template-columns: 100px 1fr 60px; }
   .form-grid { grid-template-columns: 1fr; }
   .form-grid .wide { grid-column: span 1; }
 

@@ -48,6 +48,16 @@ function bindEvents() {
   if (saveEditBtn) saveEditBtn.addEventListener("click", saveEditContract);
   if (deleteBtn) deleteBtn.addEventListener("click", deleteContract);
 
+  // თვიური ფილტრი
+  const monthFilter = document.getElementById("monthFilter");
+  const reloadMonthly = document.getElementById("reloadMonthlyBtn");
+  if (monthFilter) {
+    const now = new Date();
+    monthFilter.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    monthFilter.addEventListener("change", loadMonthlyStats);
+  }
+  if (reloadMonthly) reloadMonthly.addEventListener("click", loadMonthlyStats);
+
   // ძველი განვადება — დარჩენილი თანხის ავტო-გამოთვლა
   const oldTotal = document.getElementById("oldTotalAmount");
   const oldPaid  = document.getElementById("oldAlreadyPaid");
@@ -232,6 +242,7 @@ async function loadAllData() {
       controlData = controlRes.data || [];
       renderControl();
       renderDashboard();
+      loadMonthlyStats();
     } else {
       toast(controlRes.message || "Control ვერ ჩაიტვირთა", true);
     }
@@ -266,15 +277,23 @@ async function loadControl() {
 /* ========== RENDERS ========== */
 function renderDashboard() {
   const totalContracts = controlData.length;
+  const totalVolume    = controlData.reduce((s, r) => s + num(r["სრული თანხა"]), 0);
+  const totalPaid      = controlData.reduce((s, r) => s + num(r["სულ გადახდილი"]), 0);
   const totalRemaining = controlData.reduce((s, r) => s + num(r["სულ დარჩენილი"]), 0);
-  const overdue = controlData.reduce((s, r) => s + num(r["დაგვიანებული თანხა"]), 0);
-  const dueToday = controlData.filter(r => r["სტატუსი"] === "Due Today").length;
+  const overdue        = controlData.reduce((s, r) => s + num(r["დაგვიანებული თანხა"]), 0);
+  const dueToday       = controlData.filter(r => r["სტატუსი"] === "Due Today").length;
 
   document.getElementById("statContracts").textContent = totalContracts;
+  document.getElementById("statVolume").textContent    = money(totalVolume);
+  document.getElementById("statPaid").textContent      = money(totalPaid);
   document.getElementById("statRemaining").textContent = money(totalRemaining);
-  document.getElementById("statOverdue").textContent = money(overdue);
-  document.getElementById("statDueToday").textContent = dueToday;
+  document.getElementById("statOverdue").textContent   = money(overdue);
+  document.getElementById("statDueToday").textContent  = dueToday;
 
+  // სტატუსების განაწილება
+  renderStatusBreakdown();
+
+  // უახლოესი გადახდები ცხრილი
   const rows = [...controlData]
     .filter(r => num(r["სულ დარჩენილი"]) > 0)
     .sort((a, b) => parseDateGeo(a["შემდეგი გადახდის თარიღი"]) - parseDateGeo(b["შემდეგი გადახდის თარიღი"]))
@@ -289,6 +308,72 @@ function renderDashboard() {
       <td>${statusBadge(r["სტატუსი"])}</td>
     </tr>
   `).join("") || emptyRow(5);
+}
+
+function renderStatusBreakdown() {
+  const counts = {
+    Active:   controlData.filter(r => r["სტატუსი"] === "Active").length,
+    Closed:   controlData.filter(r => r["სტატუსი"] === "Closed").length,
+    Overdue:  controlData.filter(r => r["სტატუსი"] === "Overdue").length,
+    DueToday: controlData.filter(r => r["სტატუსი"] === "Due Today").length
+  };
+
+  const total = controlData.length || 1;
+
+  const rows = [
+    { key: 'Active',   label: 'აქტიური',          cls: 'b-active',   count: counts.Active },
+    { key: 'Overdue',  label: 'დაგვიანებული',     cls: 'b-overdue',  count: counts.Overdue },
+    { key: 'DueToday', label: 'დღეს გადასახდელი', cls: 'b-duetoday', count: counts.DueToday },
+    { key: 'Closed',   label: 'დახურული',         cls: 'b-closed',   count: counts.Closed }
+  ];
+
+  const html = rows.map(r => {
+    const pct = Math.round((r.count / total) * 100);
+    return `
+      <div class="status-row">
+        <div class="status-label">${r.label}</div>
+        <div class="status-bar-wrap">
+          <div class="status-bar ${r.cls}" style="width:${pct}%"></div>
+        </div>
+        <div class="status-count">${r.count} (${pct}%)</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('statusBreakdown').innerHTML = html;
+}
+
+/* ========== თვიური სტატისტიკა ========== */
+async function loadMonthlyStats() {
+  const filter = document.getElementById("monthFilter");
+  if (!filter.value) {
+    const now = new Date();
+    filter.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  const [yearStr, monthStr] = filter.value.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+
+  try {
+    const result = await api("getMonthlyStats", { year, month });
+    if (!result.success) {
+      toast(result.message || "თვიური სტატისტიკა ვერ ჩაიტვირთა", true);
+      return;
+    }
+
+    const d = result.data;
+    document.getElementById("monthScheduled").textContent = money(d.scheduled);
+    document.getElementById("monthScheduledCount").textContent = `${d.scheduledCount} გადახდა`;
+    document.getElementById("monthPaid").textContent = money(d.paid);
+    document.getElementById("monthPaidCount").textContent = `${d.paidCount} გადახდა`;
+    document.getElementById("monthDiff").textContent = money(Math.max(d.scheduled - d.paid, 0));
+
+    const rate = d.scheduled > 0 ? Math.round((d.paid / d.scheduled) * 100) : 0;
+    document.getElementById("monthCollectionRate").textContent = `${rate}% აკრეფილი`;
+  } catch (err) {
+    toast(err.message, true);
+  }
 }
 
 function renderControl() {
