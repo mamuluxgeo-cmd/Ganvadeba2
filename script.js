@@ -606,20 +606,29 @@ async function openDetails(contractId) {
           <thead>
             <tr>
               <th>N</th><th>თარიღი</th><th>დასარიცხი</th>
-              <th>გადახდილი</th><th>დარჩენილი</th><th>სტატუსი</th>
+              <th>გადახდილი</th><th>დარჩენილი ნაშთი</th><th>სტატუსი</th>
             </tr>
           </thead>
           <tbody>
-            ${schedule.map(s => `
-              <tr>
-                <td>${safe(s["N"])}</td>
-                <td>${safe(s["გადახდის თარიღი"])}</td>
-                <td>${money(s["საბოლოო დასარიცხი თანხა"])}</td>
-                <td>${money(s["გადახდილი თანხა"])}</td>
-                <td>${money(s["დარჩენილი თანხა"])}</td>
-                <td>${statusBadge(s["სტატუსი"])}</td>
-              </tr>
-            `).join("") || emptyRow(6)}
+            ${(() => {
+              if (!schedule.length) return emptyRow(6);
+              const totalScheduled = schedule.reduce((s, r) => s + num(r["საბოლოო დასარიცხი თანხა"]), 0);
+              let runningBalance = round2(totalScheduled);
+              return schedule.map(s => {
+                const scheduled = num(s["საბოლოო დასარიცხი თანხა"]);
+                runningBalance = round2(runningBalance - scheduled);
+                return `
+                  <tr>
+                    <td>${safe(s["N"])}</td>
+                    <td>${safe(s["გადახდის თარიღი"])}</td>
+                    <td>${money(scheduled)}</td>
+                    <td>${money(s["გადახდილი თანხა"])}</td>
+                    <td><strong>${money(Math.max(runningBalance, 0))}</strong></td>
+                    <td>${statusBadge(s["სტატუსი"])}</td>
+                  </tr>
+                `;
+              }).join("");
+            })()}
           </tbody>
         </table>
       </div>
