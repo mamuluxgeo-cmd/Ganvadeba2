@@ -42,6 +42,23 @@ function bindEvents() {
 
   document.getElementById("confirmPaymentBtn").addEventListener("click", confirmPayment);
 
+  // ძველი განვადება — დარჩენილი თანხის ავტო-გამოთვლა
+  const oldTotal = document.getElementById("oldTotalAmount");
+  const oldPaid  = document.getElementById("oldAlreadyPaid");
+  const oldRem   = document.getElementById("oldRemainingAmount");
+
+  function recalcOldRemaining() {
+    const total = Number(oldTotal.value || 0);
+    const paid  = Number(oldPaid.value || 0);
+    const rem   = Math.max(0, Math.round((total - paid) * 100) / 100);
+    oldRem.value = rem.toFixed(2);
+  }
+
+  if (oldTotal && oldPaid && oldRem) {
+    oldTotal.addEventListener("input", recalcOldRemaining);
+    oldPaid.addEventListener("input", recalcOldRemaining);
+  }
+
   document.querySelectorAll("[data-close-modal]").forEach(btn => {
     btn.addEventListener("click", closeModals);
   });
