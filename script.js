@@ -42,6 +42,12 @@ function bindEvents() {
 
   document.getElementById("confirmPaymentBtn").addEventListener("click", confirmPayment);
 
+  // რედაქტირების მოდალის ღილაკები
+  const saveEditBtn = document.getElementById("saveEditContractBtn");
+  const deleteBtn = document.getElementById("deleteContractBtn");
+  if (saveEditBtn) saveEditBtn.addEventListener("click", saveEditContract);
+  if (deleteBtn) deleteBtn.addEventListener("click", deleteContract);
+
   // ძველი განვადება — დარჩენილი თანხის ავტო-გამოთვლა
   const oldTotal = document.getElementById("oldTotalAmount");
   const oldPaid  = document.getElementById("oldAlreadyPaid");
@@ -329,6 +335,8 @@ function renderContracts() {
     return text.includes(q);
   });
 
+  const isAdmin = currentUser && currentUser.role === "admin";
+
   document.getElementById("contractsRows").innerHTML = rows.map(r => `
     <tr>
       <td>${safe(r["Contract ID"])}</td>
@@ -341,7 +349,10 @@ function renderContracts() {
       <td>${statusBadge(r["სტატუსი"])}</td>
       <td>${safe(r["შემქმნელი"])}</td>
       <td>
-        <button class="small-btn view" onclick="openDetails('${safeAttr(r["Contract ID"])}')">ნახვა</button>
+        <div class="row-actions">
+          <button class="small-btn view" onclick="openDetails('${safeAttr(r["Contract ID"])}')">ნახვა</button>
+          ${isAdmin ? `<button class="small-btn" style="background:#fef3c7;color:#854d0e" onclick="openEditContract('${safeAttr(r["Contract ID"])}')">რედაქტ.</button>` : ''}
+        </div>
       </td>
     </tr>
   `).join("") || emptyRow(10);
@@ -561,6 +572,120 @@ async function openDetails(contractId) {
 
 function closeModals() {
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
+}
+
+/* ========== რედაქტირება ========== */
+async function openEditContract(contractId) {
+  try {
+    setLoading(true);
+    const result = await api("getContractFull", { contractId });
+
+    if (!result.success) {
+      toast(result.message || "ვერ მოიძებნა", true);
+      return;
+    }
+
+    const c = result.contract;
+    const form = document.getElementById("editContractForm");
+    const recordType = c["ჩანაწერის ტიპი"] || 'ახალი';
+    const isOld = recordType === 'ძველი';
+
+    form.contractId.value = c["Contract ID"];
+    form.recordType.value = recordType;
+    form.buyerName.value = c["კლიენტი"] || '';
+    form.buyerId.value = c["პირადი ნომერი"] || '';
+    form.phone.value = c["ტელეფონი"] || '';
+    form.address.value = c["მისამართი"] || '';
+    form.products.value = c["პროდუქცია"] || '';
+    form.totalAmount.value = c["სრული თანხა"] || '';
+    form.advanceAmount.value = c["წინასწარი შენატანი"] || 0;
+    form.alreadyPaid.value = c["უკვე გადახდილი"] || 0;
+    form.months.value = c["თვეების რაოდენობა"] || '';
+    form.firstPaymentDate.value = inputDateFromGeo(c["პირველი გადახდის თარიღი"]);
+    form.paymentDay.value = c["გადახდის დღე"] || '';
+    form.comment.value = c["კომენტარი"] || '';
+    form.regenerateSchedule.checked = true;
+
+    // ძველი / ახალი — შესაბამისი ველის ჩვენება
+    document.getElementById("editAlreadyPaidWrap").style.display = isOld ? '' : 'none';
+    document.getElementById("editAdvanceAmount").parentElement.style.display = isOld ? 'none' : '';
+
+    document.getElementById("editContractModal").classList.remove("hidden");
+  } catch (err) {
+    toast(err.message, true);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function saveEditContract() {
+  const form = document.getElementById("editContractForm");
+  if (!form.reportValidity()) return;
+
+  const data = formToObject(form);
+  data.regenerateSchedule = form.regenerateSchedule.checked;
+
+  try {
+    setLoading(true);
+    const result = await api("editContract", { data });
+
+    if (!result.success) {
+      toast(result.message || "შენახვა ვერ მოხერხდა", true);
+      return;
+    }
+
+    toast("ხელშეკრულება განახლდა");
+    closeModals();
+    await loadAllData();
+  } catch (err) {
+    toast(err.message, true);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function deleteContract() {
+  const form = document.getElementById("editContractForm");
+  const id = form.contractId.value;
+  if (!id) return;
+
+  if (!confirm(`დარწმუნებული ხარ, რომ წაშალო ხელშეკრულება ${id}?\nეს ქმედება შეუქცევადია — წაიშლება ყველაფერი (გრაფიკი, გადახდები).`)) {
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const result = await api("deleteContract", { contractId: id });
+
+    if (!result.success) {
+      toast(result.message || "წაშლა ვერ მოხერხდა", true);
+      return;
+    }
+
+    toast("ხელშეკრულება წაიშალა");
+    closeModals();
+    await loadAllData();
+  } catch (err) {
+    toast(err.message, true);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// "dd.MM.yyyy" → "yyyy-MM-dd" (input[type=date]-სთვის)
+function inputDateFromGeo(value) {
+  if (!value) return '';
+  const str = String(value);
+  if (str.includes('.')) {
+    const [d, m, y] = str.split('.');
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  if (str.includes('-')) return str.substring(0, 10);
+  try {
+    return toInputDate(new Date(str));
+  } catch {
+    return '';
+  }
 }
 
 /* ========== ბეჭდვა (Ctrl+P / Print ღილაკი) ========== */
