@@ -49,7 +49,7 @@
         </div>
 
         <nav class="nav">
-          <button class="nav-btn active" data-view="dashboardView">დეშბორდი</button>
+          <button class="nav-btn active admin-only" data-view="dashboardView">დეშბორდი</button>
           <button class="nav-btn" data-view="newContractView">ახალი ხელშეკრულება</button>
           <button class="nav-btn admin-only" data-view="oldInstallmentView">ძველი განვადება</button>
           <button class="nav-btn admin-only" data-view="controlView">გადახდების კონტროლი</button>
@@ -161,9 +161,9 @@
               </div>
             </div>
 
-            <form id="newContractForm" class="form-grid">
+            <form id="newContractForm" class="form-grid" autocomplete="off">
               <label>ხელშეკრულების N
-                <input name="contractNumber" required placeholder="მაგ: 5200" />
+                <input name="contractNumber" required placeholder="მაგ: 5200" autocomplete="off" />
               </label>
               <label>სახელი გვარი
                 <input name="buyerName" required placeholder="მაგ: მაია შოთაძე" />
@@ -227,9 +227,9 @@
               <button id="saveOldInstallmentBtn" class="btn primary">ძველი განვადების შენახვა</button>
             </div>
 
-            <form id="oldInstallmentForm" class="form-grid">
+            <form id="oldInstallmentForm" class="form-grid" autocomplete="off">
               <label>სახელი გვარი
-                <input name="buyerName" required />
+                <input name="buyerName" required autocomplete="off" />
               </label>
               <label>პირადი ნომერი
                 <input name="buyerId" />

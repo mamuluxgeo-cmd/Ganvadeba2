@@ -172,6 +172,9 @@ async function openMain() {
   document.getElementById("userRoleText").textContent =
     currentUser.role === "admin" ? "ადმინი" : "მოლარე";
 
+  // შესვლისას ფორმები სუფთა უნდა იყოს — წინა მომხმარებლის მონაცემები არ უნდა გამოჩნდეს
+  resetAllForms();
+
   applyRoleAccess();
   await loadAllData();
 }
@@ -180,8 +183,26 @@ function logout() {
   currentUser = null;
   localStorage.removeItem("installment_user");
 
+  // ყველა ფორმის გასუფთავება, რომ შემდეგ მომხმარებელს არ უნახოს წინა მონაცემები
+  resetAllForms();
+
   document.getElementById("mainView").classList.add("hidden");
   document.getElementById("loginView").classList.remove("hidden");
+}
+
+function resetAllForms() {
+  document.querySelectorAll("form").forEach(f => {
+    try { f.reset(); } catch (e) {}
+  });
+  // preview-ის გასუფთავება
+  const preview = document.getElementById("contractPreview");
+  if (preview) {
+    preview.classList.add("empty-preview");
+    preview.innerHTML = 'შეავსე ფორმა და დააჭირე წინასწარი ნახვა';
+  }
+  lastPreviewHtml = "";
+  lastPreviewData = null;
+  setTodayDefaults();
 }
 
 function applyRoleAccess() {
